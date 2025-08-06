@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد تعاملی: تحلیل ابتکار ملی مقابله با ریزپرنده‌ها</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f0f4f8; /* A slightly cooler gray */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+        .section-title {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700;
+            color: #1e3a8a; /* A deeper blue */
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 4px solid #3b82f6; /* A vibrant blue */
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #2563eb; /* A brighter blue for hover */
+            border-bottom-color: #2563eb;
+        }
+        .kill-chain-step {
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .kill-chain-step:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .gemini-modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .trend-item {
+            transition: background-color 0.2s, transform 0.2s, border-left-color 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .trend-item:hover {
+            background-color: #dbeafe; /* blue-100 */
+            cursor: pointer;
+            transform: translateX(-5px);
+            border-left-color: #3b82f6;
+        }
+        .loader {
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6; /* blue-500 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .icon-wrapper {
+            width: 72px;
+            height: 72px;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #e6f0ff, #dbeafe);
+            color: #1e3a8a;
+            box-shadow: inset 5px 5px 10px #c5d7ee, inset -5px -5px 10px #f7ffff;
+        }
+        .gemini-feature-box {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-left: 5px solid #3b82f6;
+            box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.05);
+        }
+        .custom-btn {
+             transition: all 0.3s ease;
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .custom-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-700">
+
+    <header class="bg-white/90 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                 <svg class="h-8 w-8 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25" />
+                </svg>
+                <h1 class="text-xl md:text-2xl font-bold text-blue-800">تحلیل ابتکار ملی C-UAS</h1>
+            </div>
+            <div class="hidden md:flex space-x-8 space-x-reverse">
+                <a href="#strategic-imperative" class="nav-link text-gray-600 font-semibold border-b-2 border-transparent">ضرورت راهبردی</a>
+                <a href="#kill-chain" class="nav-link text-gray-600 font-semibold border-b-2 border-transparent">زنجیره انهدام</a>
+                <a href="#future-outlook" class="nav-link text-gray-600 font-semibold border-b-2 border-transparent">چشم‌انداز آینده</a>
+            </div>
+            <div class="md:hidden">
+                <button id="menu-btn" class="text-slate-800 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#strategic-imperative" class="block py-2 px-4 text-sm hover:bg-slate-100">ضرورت راهبردی</a>
+            <a href="#kill-chain" class="block py-2 px-4 text-sm hover:bg-slate-100">زنجیره انهدام</a>
+            <a href="#future-outlook" class="block py-2 px-4 text-sm hover:bg-slate-100">چشم‌انداز آینده</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section class="text-center mb-20">
+            <h2 class="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-sky-500">ابتکار ملی مقابله با ریزپرنده‌ها (C-UAS)</h2>
+            <p class="text-lg md:text-xl text-slate-600 max-w-4xl mx-auto">
+                تحلیلی جامع بر رویکرد راهبردی و فنی ایران برای مقابله با تهدیدات نوظهور پهپادی، از طریق ایجاد یک اکوسیستم دفاعی بومی، لایه‌ای و هوشمند.
+            </p>
+        </section>
+
+        <section id="strategic-imperative" class="mb-20 scroll-mt-20">
+            <h3 class="section-title">ضرورت راهبردی: از تهدید تا خودکفایی</h3>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-md border border-slate-200 hover:shadow-xl transition-shadow duration-300">
+                    <h4 class="text-xl font-bold text-blue-800 mb-3">درک تهدید و پاسخ ملی</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        این ابتکار، که توسط ارتش و وزارت دفاع ایران هدایت می‌شود، پاسخی مستقیم به تهدیدات امنیتی ملموس ناشی از ریزپرنده‌های متخاصم است. هدف، فراتر از یک فراخوان عمومی، تلاشی متمرکز برای مقابله با یک دشمن پایدار و پیچیده از نظر فناوری است که برای جاسوسی و خرابکاری در مناطق حساس استفاده می‌شود.
+                    </p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md border border-slate-200 hover:shadow-xl transition-shadow duration-300">
+                    <h4 class="text-xl font-bold text-blue-800 mb-3">چرخش به سمت دفاع نامتقارن بومی</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        ایران به جای خرید سامانه‌های خارجی، بر پرورش یک اکوسیستم نوآورانه داخلی تمرکز کرده است. این رویکرد راهبردی با هدف حل **عدم توازن اقتصادی** در جنگ‌های C-UAS طراحی شده، جایی که پهپادهای ارزان می‌توانند مهمات دفاعی گران‌قیمت را به اتمام برسانند. هدف نهایی، ایجاد یک پایگاه صنعتی خودکفا برای تولید راه‌حل‌های مقرون‌به‌صرفه است.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="kill-chain" class="mb-20 scroll-mt-20">
+            <h3 class="section-title text-center">زنجیره انهدام C-UAS: یک فرآیند یکپارچه</h3>
+            <p class="text-center text-slate-600 mb-12 max-w-3xl mx-auto">
+                یک سامانه C-UAS مؤثر بر اساس یک فرآیند چهار مرحله‌ای عمل می‌کند که به آن «زنجیره انهدام» می‌گویند. هر مرحله بر فناوری‌ها و راهبردهای خاصی متکی است. بر روی هر مرحله کلیک کنید تا جزئیات مربوط به آن را مشاهده نمایید.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center mb-12">
+                <a href="#detection-section" class="kill-chain-step flex flex-col items-center bg-white p-6 rounded-xl border-b-4 border-blue-500">
+                    <div class="icon-wrapper">
+                        <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3.75H19.5M8.25 3.75v16.5M8.25 3.75L3 9.75v10.5a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5h-15a1.5 1.5 0 0 0-1.5 1.5v1.5" /></svg>
+                    </div>
+                    <h4 class="text-xl font-bold">۱. کشف و تحلیل</h4>
+                    <p class="text-sm text-slate-500 mt-2">ترکیب حسگرها برای شناسایی دقیق</p>
+                </a>
+                <a href="#c2-section" class="kill-chain-step flex flex-col items-center bg-white p-6 rounded-xl border-b-4 border-amber-500">
+                    <div class="icon-wrapper">
+                        <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>
+                    </div>
+                    <h4 class="text-xl font-bold">۲. فرماندهی و تصمیم</h4>
+                    <p class="text-sm text-slate-500 mt-2">پردازش داده و تحلیل هوشمند</p>
+                </a>
+                <a href="#neutralization-section" class="kill-chain-step flex flex-col items-center bg-white p-6 rounded-xl border-b-4 border-red-500">
+                    <div class="icon-wrapper">
+                        <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.287 8.287 0 0 0 3-2.553A8.252 8.252 0 0 1 15.362 5.214Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a9.75 9.75 0 0 0 9.75-9.75H12V2.25A9.75 9.75 0 0 0 2.25 12h9.75v6.75Z" /></svg>
+                    </div>
+                    <h4 class="text-xl font-bold">۳. خنثی‌سازی و مقابله</h4>
+                    <p class="text-sm text-slate-500 mt-2">مقابله نرم و سخت با تهدید</p>
+                </a>
+                <a href="#analysis-section" class="kill-chain-step flex flex-col items-center bg-white p-6 rounded-xl border-b-4 border-emerald-500">
+                    <div class="icon-wrapper">
+                        <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h12A2.25 2.25 0 0 0 20.25 14.25V3m-16.5 0h16.5m-16.5 0H3.75m16.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-1.5m-15-13.5H18M3.75 6.75h.008v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm1.5.008h.008v.008h-.008V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                    </div>
+                    <h4 class="text-xl font-bold">۴. شبیه‌سازی و تحلیل</h4>
+                    <p class="text-sm text-slate-500 mt-2">ارزیابی عملکرد و کاهش خسارت</p>
+                </a>
+            </div>
+
+            <div id="detection-section" class="mb-16 p-8 bg-white rounded-xl shadow-lg border border-slate-200 scroll-mt-20">
+                <div class="grid md:grid-cols-5 gap-8 items-center">
+                    <div class="md:col-span-3">
+                        <h4 class="text-2xl font-bold text-blue-800 mb-4">مرحله ۱: کشف، پایش و تحلیل رفتار</h4>
+                        <p class="text-slate-600 mb-8 leading-relaxed">
+                            یک پدافند لایه‌ای نیازمند یکپارچه‌سازی انواع مختلف حسگرها است. هدف، ترکیب داده‌های این حسگرها برای ایجاد یک تصویر هوایی واحد، کاهش هشدارهای کاذب و افزایش اطمینان در شناسایی است. نمودار زیر قابلیت‌های نسبی این فناوری‌ها را مقایسه می‌کند.
+                        </p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <img src="https://placehold.co/600x400/dbeafe/1e3a8a?text=سامانه+راداری" alt="سامانه راداری پدافند هوایی" class="rounded-lg shadow-md w-full h-auto">
+                    </div>
+                </div>
+                <div class="chart-container mt-8">
+                    <canvas id="detectionChart"></canvas>
+                </div>
+                <div class="mt-12 p-6 rounded-lg gemini-feature-box">
+                    <h5 class="font-bold text-lg text-slate-800 mb-3">✨ توضیح‌دهنده فناوری</h5>
+                    <p class="text-sm text-slate-600 mb-4">یک فناوری را برای دریافت توضیح ساده و کاربردی از عملکرد آن انتخاب کنید.</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <select id="tech-explainer-selector" class="bg-slate-50 border border-gray-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-inner">
+                            <option value="radar">رادار</option>
+                            <option value="rf">تحلیل RF</option>
+                            <option value="eoir">حسگرهای اپتیکال (EO/IR)</option>
+                            <option value="acoustic">حسگرهای صوتی</option>
+                        </select>
+                        <button id="explain-tech-btn" class="custom-btn bg-blue-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-blue-700 flex-shrink-0">توضیح بده</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="c2-section" class="mb-16 p-8 bg-white rounded-xl shadow-lg border border-slate-200 scroll-mt-20">
+                 <div class="grid md:grid-cols-5 gap-8 items-center">
+                    <div class="md:col-span-3">
+                        <h4 class="text-2xl font-bold text-amber-700 mb-4">مرحله ۲: فرماندهی، کنترل و تحلیل هوشمند</h4>
+                        <p class="text-slate-600 mb-8 leading-relaxed">
+                            این مرحله «سیستم عصبی مرکزی» پدافند C-UAS است. یک پلتفرم C4ISR با معماری باز، حسگرها، تصمیم‌گیرندگان و عملگرها را یکپارچه می‌کند. تحلیل هوشمند نقشی حیاتی در بهینه‌سازی فرآیند تصمیم‌گیری و کاهش بار شناختی اپراتور ایفا می‌کند.
+                        </p>
+                    </div>
+                     <div class="md:col-span-2">
+                        <img src="https://placehold.co/600x400/fef3c7/92400e?text=اتاق+فرماندهی" alt="اتاق فرماندهی و کنترل نظامی" class="rounded-lg shadow-md w-full h-auto">
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row items-center justify-center gap-4 text-center mt-8 bg-slate-50 p-6 rounded-lg">
+                    <div class="bg-white shadow-md p-6 rounded-lg w-full md:w-1/2">
+                        <h5 class="font-bold text-lg mb-2">فاز اول: معماری باز</h5>
+                        <p class="text-sm">طراحی پلتفرم C4ISR بر اساس استاندارد DDS برای تبادل داده آنی و طراحی آداپتورهای استاندارد برای یکپارچه‌سازی آسان.</p>
+                    </div>
+                    <div class="text-2xl text-slate-400 font-bold mx-4">❯</div>
+                    <div class="bg-white shadow-md p-6 rounded-lg w-full md:w-1/2">
+                        <h5 class="font-bold text-lg mb-2">فاز دوم: تزریق تحلیل هوشمند</h5>
+                        <p class="text-sm">توسعه تصویر عملیاتی مشترک (COP) و استفاده از الگوریتم‌های بهینه‌سازی برای تخصیص خودکار سلاح به هدف.</p>
+                    </div>
+                </div>
+                 <div class="mt-12 p-6 rounded-lg gemini-feature-box border-l-amber-500">
+                    <h5 class="font-bold text-lg text-slate-800 mb-3">✨ کاوش عمیق فنی با شبکه تحلیل ابتکار</h5>
+                    <p class="text-sm text-slate-600 mb-4">یک مفهوم فنی پیچیده را برای دریافت توضیح ساده از شبکه تحلیل ابتکار وارد کنید.</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <input type="text" id="deep-dive-input" class="bg-slate-50 border border-gray-300 text-slate-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 shadow-inner" placeholder="مثال: مدل JDL برای ترکیب داده چیست؟">
+                        <button id="deep-dive-btn" class="custom-btn bg-amber-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-amber-700 flex-shrink-0">توضیح بخواه</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="neutralization-section" class="mb-16 p-8 bg-white rounded-xl shadow-lg border border-slate-200 scroll-mt-20">
+                <div class="grid md:grid-cols-5 gap-8 items-center">
+                    <div class="md:col-span-3">
+                        <h4 class="text-2xl font-bold text-red-700 mb-4">مرحله ۳: روش‌های خنثی‌سازی و مقابله</h4>
+                        <p class="text-slate-600 mb-6 leading-relaxed">
+                            انتخاب روش مقابله به سناریو بستگی دارد. **مقابله نرم (Soft-Kill)** با اختلال در سامانه‌های پهپاد، برای محیط‌های شهری ایده‌آل است، در حالی که **مقابله سخت (Hard-Kill)** با انهدام فیزیکی، در میدان نبرد کاربرد بیشتری دارد. از منوی زیر روش‌های مختلف را برای مقایسه انتخاب کنید.
+                        </p>
+                    </div>
+                    <div class="md:col-span-2">
+                         <img src="https://placehold.co/600x400/fee2e2/b91c1c?text=جنگ+الکترونیک" alt="سامانه جنگ الکترونیک علیه پهپاد" class="rounded-lg shadow-md w-full h-auto">
+                    </div>
+                </div>
+                <div class="mb-6 max-w-md mx-auto mt-8">
+                    <label for="neutralization-selector" class="block mb-2 text-sm font-medium text-slate-900">روش‌های مقابله را برای مقایسه انتخاب کنید:</label>
+                    <select id="neutralization-selector" multiple class="bg-gray-50 border border-gray-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="neutralizationChart"></canvas>
+                </div>
+                <div class="mt-12 p-6 rounded-lg gemini-feature-box border-l-red-500">
+                    <h5 class="font-bold text-lg text-slate-800 mb-3">✨ دستیار انتخاب روش مقابله</h5>
+                    <p class="text-sm text-slate-600 mb-4">یک سناریوی درگیری را انتخاب کنید تا بهترین روش مقابله پیشنهاد شود.</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <select id="decision-helper-selector" class="bg-slate-50 border border-gray-300 text-slate-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 shadow-inner">
+                            <option value="urban">پهپاد بر فراز منطقه مسکونی</option>
+                            <option value="military">پهپاد نزدیک به پایگاه نظامی</option>
+                            <option value="swarm">حمله فوجی در فضای باز</option>
+                        </select>
+                        <button id="get-recommendation-btn" class="custom-btn bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-red-700 flex-shrink-0">دریافت توصیه</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analysis-section" class="p-8 bg-white rounded-xl shadow-lg border border-slate-200 scroll-mt-20">
+                <div class="grid md:grid-cols-5 gap-8 items-center">
+                    <div class="md:col-span-3">
+                        <h4 class="text-2xl font-bold text-emerald-700 mb-4">مرحله ۴: شبیه‌سازی و تحلیل ریسک</h4>
+                        <p class="text-slate-600 mb-6 leading-relaxed">
+                           شبیه‌سازها به مدافعان اجازه می‌دهند تاکتیک‌ها را مدل‌سازی کنند. با استفاده از ابزار **شبکه تحلیل ابتکار**، یک سناریوی تهدید را توصیف کنید تا یک تحلیل اولیه تولید شود.
+                        </p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <img src="https://placehold.co/600x400/d1fae5/047857?text=شبیه+سازی" alt="شبیه‌سازی کامپیوتری حمله فوجی پهپادها" class="rounded-lg shadow-md w-full h-auto">
+                    </div>
+                </div>
+                <div class="max-w-xl mx-auto p-6 rounded-lg mt-8 gemini-feature-box border-l-emerald-500">
+                    <label for="scenario-input" class="block mb-2 text-sm font-medium text-slate-700">توصیف سناریوی تهدید:</label>
+                    <input type="text" id="scenario-input" class="bg-slate-50 border border-gray-300 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5 shadow-inner" placeholder="مثال: حمله فوجی ۵ پهپاد کوادکوپتر کوچک">
+                    <button id="generate-scenario-btn" class="custom-btn mt-4 w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-emerald-700 flex items-center justify-center">
+                        <span>✨ تولید سناریو با شبکه تحلیل ابتکار</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="future-outlook" class="scroll-mt-20">
+            <h3 class="section-title">چشم‌انداز آینده و توصیه‌های راهبردی</h3>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-xl font-bold text-blue-800 mb-3">روندهای جهانی جنگ‌های ضدپهپادی</h4>
+                    <p class="text-slate-500 mb-4">بر روی هر روند کلیک کنید تا تحلیل‌های راهبردی را مشاهده نمایید.</p>
+                    <ul id="trends-list" class="space-y-2 text-slate-600">
+                        <li data-trend="ai" class="p-4 rounded-lg trend-item bg-white"><b>خودمختاری مبتنی بر تحلیل هوشمند:</b> اجرای کل زنجیره انهدام با حداقل دخالت انسانی.</li>
+                        <li data-trend="energy" class="p-4 rounded-lg trend-item bg-white"><b>گسترش انرژی هدایت‌شده:</b> راه‌حل مقرون‌به‌صرفه برای مقابله با حملات فوجی.</li>
+                        <li data-trend="network" class="p-4 rounded-lg trend-item bg-white"><b>پدافند شبکه‌ای و لایه‌ای:</b> تأکید بر سامانه‌های یکپارچه با معماری باز.</li>
+                        <li data-trend="cost" class="p-4 rounded-lg trend-item bg-white"><b>مقرون‌به‌صرفه بودن:</b> نوآوری به سمت راه‌حل‌هایی با هزینه پایین برای هر درگیری.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md border border-slate-200">
+                    <h4 class="text-xl font-bold text-blue-800 mb-3">توصیه‌های راهبردی کلیدی برای ایران</h4>
+                    <ul class="list-disc list-inside space-y-3 text-slate-600">
+                        <li><b>اولویت‌بندی پژوهش:</b> تمرکز بر چالش‌های کلیدی مانند «ترکیب داده‌های ناهمگون» و «یادگیری تقویتی».</li>
+                        <li><b>ایجاد بستر آزمون استاندارد:</b> توسعه یک محیط شبیه‌سازی ملی برای ارزیابی عینی راه‌حل‌ها.</li>
+                        <li><b>همکاری بین‌بخشی:</b> تقویت ارتباط میان دانشگاه و صنعت برای تسریع چرخه تبدیل ایده به محصول.</li>
+                    </ul>
+                </div>
+            </div>
+             <div class="mt-12 p-6 rounded-lg gemini-feature-box">
+                <h5 class="font-bold text-lg text-slate-800 mb-3">✨ تحلیل راهبردی SWOT با شبکه تحلیل ابتکار</h5>
+                <p class="text-sm text-slate-600 mb-4">برای دریافت یک تحلیل جامع از نقاط قوت، ضعف، فرصت‌ها و تهدیدهای ابتکار ملی C-UAS ایران، روی دکمه زیر کلیک کنید.</p>
+                <button id="swot-analysis-btn" class="custom-btn w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">شروع تحلیل SWOT</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p class="text-slate-400">این داشبورد تعاملی بر اساس گزارش «تحقیق جامع: تحلیل راهبردی و فنی ابتکار ملی مقابله با ریزپرنده‌ها» ایجاد شده و با قابلیت‌های "شبکه تحلیل ابتکار" ارتقا یافته است.</p>
+            <div class="mt-6 flex justify-center items-center gap-4 text-slate-300">
+                 <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                </svg>
+                <span>ارتباط با تیم تحلیل ابتکار: <a href="tel:09102799957" class="font-bold tracking-wider hover:text-blue-400 transition-colors">۰۹۱۰۲۷۹۹۹۵۷</a></span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal -->
+    <div id="modal" class="gemini-modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center p-4 border-b bg-slate-50 rounded-t-lg">
+                <h5 id="modal-title" class="text-xl font-bold text-slate-800">تحلیل شبکه ابتکار</h5>
+                <button id="close-modal-btn" class="text-3xl text-slate-500 hover:text-slate-800 transition-colors">&times;</button>
+            </div>
+            <div id="modal-body" class="p-6 overflow-y-auto">
+                <div id="modal-loader" class="flex justify-center items-center h-48">
+                    <div class="loader"></div>
+                </div>
+                <div id="modal-content" class="hidden prose max-w-none text-slate-700 leading-relaxed"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- OFFLINE DATA STORE ---
+            const offlineData = {
+                techExplain: {
+                    radar: {
+                        title: 'توضیح فناوری: رادار',
+                        content: `<h6>اساس کار:</h6><p>رادار با ارسال امواج رادیویی و دریافت بازتاب آن‌ها از اشیاء، کار می‌کند. با اندازه‌گیری زمان رفت و برگشت موج، فاصله و با تحلیل تغییر فرکانس، سرعت هدف مشخص می‌شود.</p><h6>نقاط قوت در برابر پهپادها:</h6><p>برد بلند و قابلیت کار در هر شرایط آب و هوایی، مهم‌ترین مزیت آن است.</p><h6>نقاط ضعف و چالش‌ها:</h6><p>پهپادهای کوچک سطح مقطع راداری (RCS) پایینی دارند و ممکن است در میان نویزهای زمینی (کلاتر) پنهان شوند.</p>`
+                    },
+                    rf: {
+                        title: 'توضیح فناوری: تحلیل RF',
+                        content: `<h6>اساس کار:</h6><p>این سامانه به صورت غیرفعال به سیگنال‌های رادیویی که پهپاد برای ارتباط با اپراتور استفاده می‌کند، گوش می‌دهد. با تحلیل این سیگنال‌ها، می‌توان نوع پهپاد و مکان اپراتور را شناسایی کرد.</p><h6>نقاط قوت در برابر پهپادها:</h6><p>قابلیت شناسایی مدل پهپاد و مکان‌یابی اپراتور، و همچنین پنهانکار بودن سامانه.</p><h6>نقاط ضعف و چالش‌ها:</h6><p>در برابر پهپادهای کاملاً خودمختار که از ارتباط رادیویی استفاده نمی‌کنند، ناکارآمد است.</p>`
+                    },
+                    eoir: {
+                        title: 'توضیح فناوری: حسگرهای اپتیکال (EO/IR)',
+                        content: `<h6>اساس کار:</h6><p>این سامانه‌ها از دوربین‌های پیشرفته مرئی (EO) و حرارتی (IR) برای شناسایی بصری پهپادها استفاده می‌کنند. دوربین‌های حرارتی اثر گرمایی موتور پهپاد را تشخیص می‌دهند.</p><h6>نقاط قوت در برابر پهپادها:</h6><p>تأیید بصری دقیق هدف و کارایی بالا در شناسایی نهایی.</p><h6>نقاط ضعف و چالش‌ها:</h6><p>محدود به خط دید مستقیم و به شدت تحت تأثیر شرایط بد آب و هوایی (مه، باران) قرار می‌گیرند.</p>`
+                    },
+                    acoustic: {
+                        title: 'توضیح فناوری: حسگرهای صوتی',
+                        content: `<h6>اساس کار:</h6><p>این حسگرها با استفاده از آرایه‌ای از میکروفون‌های حساس، صدای خاص پروانه‌های پهپاد را از نویز محیط تشخیص می‌دهند.</p><h6>نقاط قوت در برابر پهپادها:</h6><p>هزینه بسیار پایین و قابلیت کشف پهپادهای خودمختار که سیگنال RF ندارند.</p><h6>نقاط ضعف و چالش‌ها:</h6><p>برد بسیار کوتاه و حساسیت بالا به نویز محیطی در مناطق شهری یا پر سر و صدا.</p>`
+                    }
+                },
+                decisionHelper: {
+                    urban: {
+                        title: 'توصیه برای: پهپاد بر فراز منطقه مسکونی',
+                        content: `<h6>تحلیل سریع موقعیت:</h6><p>ریسک خسارت جانبی در این سناریو بسیار بالاست. اولویت اصلی، خنثی‌سازی تهدید بدون ایجاد خطر برای شهروندان است.</p><h6>روش پیشنهادی:</h6><p>مقابله نرم: اخلالگری RF یا تسخیر سایبری.</p><h6>دلایل انتخاب:</h6><ul><li><b>حداقل خسارت جانبی:</b> این روش‌ها از سقوط کنترل‌نشده پهپاد جلوگیری می‌کنند.</li><li><b>اثربخشی بالا:</b> اکثر پهپادهای تجاری به ارتباط RF وابسته هستند.</li><li><b>ایجاد فرصت:</b> با قطع ارتباط، می‌توان پهپاد را مجبور به بازگشت به مبدأ یا فرود اضطراری کرد.</li></ul>`
+                    },
+                    military: {
+                        title: 'توصیه برای: پهپاد نزدیک به پایگاه نظامی',
+                        content: `<h6>تحلیل سریع موقعیت:</h6><p>تهدید مستقیم برای دارایی‌های حساس نظامی وجود دارد. سرعت واکنش و قطعیت در انهدام، اولویت اصلی است.</p><h6>روش پیشنهادی:</h6><p>مقابله سخت: لیزر پرانرژی (HEL) یا پرتابه‌های هدایت‌شونده.</p><h6>دلایل انتخاب:</h6><ul><li><b>سرعت و دقت:</b> لیزر می‌تواند هدف را تقریباً بلافاصله منهدم کند.</li><li><b>ریسک کنترل‌شده:</b> در محیط نظامی، ریسک خسارت جانبی کمتر است.</li><li><b>مقابله با تهدیدات متعدد:</b> سامانه‌های لیزری می‌توانند به سرعت با چندین هدف درگیر شوند.</li></ul>`
+                    },
+                    swarm: {
+                        title: 'توصیه برای: حمله فوجی در فضای باز',
+                        content: `<h6>تحلیل سریع موقعیت:</h6><p>دشمن با استفاده از تعداد بالای پهپاد قصد دارد پدافند را اشباع کند. هزینه هر درگیری و سرعت واکنش بسیار مهم است.</p><h6>روش پیشنهادی:</h6><p>ترکیبی: مایکروویو پرقدرت (HPM) و اخلالگری گسترده RF.</p><h6>دلایل انتخاب:</h6><ul><li><b>مقابله گروهی:</b> HPM می‌تواند الکترونیک چندین پهپاد را در یک منطقه وسیع به صورت همزمان از کار بیندازد.</li><li><b>مقرون‌به‌صرفه:</b> هزینه هر شلیک برای سامانه‌های انرژی هدایت‌شده بسیار پایین است.</li><li><b>اخلال در هماهنگی:</b> اخلالگری RF ارتباط میان اعضای فوجی را مختل کرده و حمله را بی‌اثر می‌کند.</li></ul>`
+                    }
+                },
+                trendAnalysis: {
+                    ai: {
+                        title: 'تحلیل روند: خودمختاری مبتنی بر تحلیل هوشمند',
+                        content: `<h6>تحلیل روند:</h6><p>آینده جنگ‌های C-UAS به سمت سامانه‌هایی می‌رود که می‌توانند کل زنجیره انهدام را از کشف تا انهدام به صورت خودکار و بدون دخالت انسان انجام دهند. این امر سرعت واکنش را به کسری از ثانیه کاهش می‌دهد.</p><h6>توصیه‌های راهبردی کلیدی:</h6><ul><li>سرمایه‌گذاری در توسعه الگوریتم‌های یادگیری تقویتی (RL) برای تخصیص بهینه سلاح به هدف.</li><li>ایجاد محیط‌های شبیه‌سازی پیشرفته برای آموزش و آزمون این الگوریتم‌ها در برابر سناریوهای پیچیده.</li></ul>`
+                    },
+                    energy: {
+                        title: 'تحلیل روند: گسترش انرژی هدایت‌شده',
+                        content: `<h6>تحلیل روند:</h6><p>سلاح‌های انرژی هدایت‌شده (لیزر و مایکروویو) به دلیل هزینه بسیار پایین برای هر شلیک و ظرفیت مهمات تقریباً نامحدود، به عنوان راه‌حل اصلی برای مقابله با حملات فوجی پهپادها در حال ظهور هستند.</p><h6>توصیه‌های راهبردی کلیدی:</h6><ul><li>اولویت‌بندی تحقیق و توسعه در زمینه لیزرهای حالت جامد و منابع تولید مایکروویو پرقدرت.</li><li>یکپارچه‌سازی این سامانه‌ها با پلتفرم‌های متحرک برای افزایش انعطاف‌پذیری عملیاتی.</li></ul>`
+                    },
+                    network: {
+                        title: 'تحلیل روند: پدافند شبکه‌ای و لایه‌ای',
+                        content: `<h6>تحلیل روند:</h6><p>هیچ سامانه واحدی نمی‌تواند به تنهایی مؤثر باشد. رویکرد مدرن، ایجاد شبکه‌ای از حسگرها و عملگرهای مختلف است که تحت یک معماری باز و یکپارچه عمل می‌کنند و یکدیگر را پوشش می‌دهند.</p><h6>توصیه‌های راهبردی کلیدی:</h6><ul><li>توسعه یک استاندارد ملی برای تبادل داده میان سامانه‌های C-UAS مختلف.</li><li>طراحی یک پلتفرم فرماندهی و کنترل ماژولار که بتواند به راحتی فناوری‌های جدید را در خود جای دهد.</li></ul>`
+                    },
+                    cost: {
+                        title: 'تحلیل روند: مقرون‌به‌صرفه بودن',
+                        content: `<h6>تحلیل روند:</h6><p>جنگ پهپادی یک چالش اقتصادی است. پیروزی از آن کسی است که بتواند با هزینه کمتر، تهدیدات بیشتری را خنثی کند. نوآوری به سمت تولید انبوه سامانه‌های ارزان‌قیمت اما مؤثر در حال حرکت است.</p><h6>توصیه‌های راهبردی کلیدی:</h6><ul><li>حمایت از شرکت‌های دانش‌بنیان کوچک برای توسعه راه‌حل‌های خلاقانه و کم‌هزینه.</li><li>تمرکز بر روش‌های مقابله نرم (مانند اخلالگری) که هزینه هر درگیری در آن‌ها نزدیک به صفر است.</li></ul>`
+                    }
+                }
+            };
+
+            // --- UI & Chart Setup (No Change) ---
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            menuBtn.addEventListener('click', () => { mobileMenu.classList.toggle('hidden'); });
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => { anchor.addEventListener('click', function (e) { e.preventDefault(); if (mobileMenu.offsetParent !== null) { mobileMenu.classList.add('hidden'); } const targetElement = document.querySelector(this.getAttribute('href')); if(targetElement) { targetElement.scrollIntoView({ behavior: 'smooth' }); } }); });
+            const detectionData = { labels: ['برد کشف', 'قابلیت تمام‌وضعیت', 'پنهانکاری', 'شناسایی مدل', 'مکان‌یابی اپراتور'], datasets: [ { label: 'رادار', data: [5, 5, 1, 2, 0], backgroundColor: 'rgba(59, 130, 246, 0.6)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }, { label: 'تحلیل RF', data: [4, 5, 5, 5, 5], backgroundColor: 'rgba(217, 119, 6, 0.6)', borderColor: 'rgba(217, 119, 6, 1)', borderWidth: 1 }, { label: 'EO/IR', data: [3, 2, 5, 5, 0], backgroundColor: 'rgba(220, 38, 38, 0.6)', borderColor: 'rgba(220, 38, 38, 1)', borderWidth: 1 }, { label: 'صوتی', data: [1, 2, 5, 2, 0], backgroundColor: 'rgba(5, 150, 105, 0.6)', borderColor: 'rgba(5, 150, 105, 1)', borderWidth: 1 } ] };
+            const detectionCtx = document.getElementById('detectionChart').getContext('2d');
+            new Chart(detectionCtx, { type: 'bar', data: detectionData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: (value) => ['', 'بسیار ضعیف', 'ضعیف', 'متوسط', 'خوب', 'عالی'][value], font: { family: 'Vazirmatn' } } }, x: { ticks: { font: { family: 'Vazirmatn' } } } }, plugins: { title: { display: true, text: 'مقایسه فناوری‌های کشف', font: { size: 18, family: 'Vazirmatn' } }, legend: { labels: { font: { family: 'Vazirmatn' } } }, tooltip: { bodyFont: { family: 'Vazirmatn' }, titleFont: { family: 'Vazirmatn' } } } } });
+            const neutralizationRawData = [ { name: 'اخلالگری RF', data: [3, 5, 5, 4], color: 'rgba(59, 130, 246, 0.4)' }, { name: 'فریب GPS', data: [3, 4, 5, 3], color: 'rgba(16, 185, 129, 0.4)' }, { name: 'تور', data: [2, 4, 4, 2], color: 'rgba(249, 115, 22, 0.4)' }, { name: 'پرتابه‌ها', data: [3, 3, 1, 3], color: 'rgba(239, 68, 68, 0.4)' }, { name: 'لیزر (HEL)', data: [3, 5, 4, 4], color: 'rgba(139, 92, 246, 0.4)' }, { name: 'پهپاد شکارچی', data: [3, 3, 3, 3], color: 'rgba(236, 72, 153, 0.4)' } ];
+            const neutralizationLabels = ['برد مؤثر', 'هزینه پایین (هر درگیری)', 'ریسک پایین (خسارت جانبی)', 'کارایی علیه حمله فوجی'];
+            const selector = document.getElementById('neutralization-selector');
+            neutralizationRawData.forEach((item, index) => { const option = document.createElement('option'); option.value = index; option.textContent = item.name; selector.appendChild(option); });
+            const neutralizationCtx = document.getElementById('neutralizationChart').getContext('2d');
+            const neutralizationChart = new Chart(neutralizationCtx, { type: 'radar', data: { labels: neutralizationLabels, datasets: [] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 5, ticks: { stepSize: 1, backdropColor: 'transparent', font: { family: 'Vazirmatn' } }, pointLabels: { font: { size: 12, family: 'Vazirmatn' } } } }, plugins: { title: { display: true, text: 'مقایسه روش‌های خنثی‌سازی', font: { size: 18, family: 'Vazirmatn' } }, legend: { labels: { font: { family: 'Vazirmatn' } } }, tooltip: { bodyFont: { family: 'Vazirmatn' }, titleFont: { family: 'Vazirmatn' } } } } });
+            function updateNeutralizationChart() { const selectedOptions = Array.from(selector.selectedOptions).map(opt => parseInt(opt.value)); neutralizationChart.data.datasets = selectedOptions.map(index => { const item = neutralizationRawData[index]; return { label: item.name, data: item.data, backgroundColor: item.color, borderColor: item.color.replace('0.4', '1'), borderWidth: 2, pointBackgroundColor: item.color.replace('0.4', '1') }; }); neutralizationChart.update(); }
+            selector.addEventListener('change', updateNeutralizationChart);
+            selector.options[0].selected = true; selector.options[4].selected = true; updateNeutralizationChart();
+
+            // --- Modal & API Integration ---
+            const modal = document.getElementById('modal');
+            const modalContainer = modal.querySelector('.bg-white');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
+            const modalLoader = document.getElementById('modal-loader');
+            const apiKey = ""; 
+
+            function showModal(title, content) {
+                modalTitle.textContent = title;
+                modalContent.innerHTML = content;
+                modalLoader.classList.add('hidden');
+                modalContent.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContainer.classList.remove('scale-95');
+                }, 10);
+            }
+
+            function hideModal() {
+                modal.classList.add('opacity-0');
+                modalContainer.classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+
+            closeModalBtn.addEventListener('click', hideModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) { hideModal(); } });
+
+            // --- OFFLINE FEATURE HANDLERS ---
+            
+            document.getElementById('explain-tech-btn').addEventListener('click', () => {
+                const selectedTechKey = document.getElementById('tech-explainer-selector').value;
+                const data = offlineData.techExplain[selectedTechKey];
+                showModal(data.title, data.content);
+            });
+
+            document.getElementById('get-recommendation-btn').addEventListener('click', () => {
+                const selectedScenarioKey = document.getElementById('decision-helper-selector').value;
+                const data = offlineData.decisionHelper[selectedScenarioKey];
+                showModal(data.title, data.content);
+            });
+            
+            document.getElementById('trends-list').addEventListener('click', (e) => {
+                const trendItem = e.target.closest('.trend-item');
+                if (!trendItem) return;
+                const selectedTrendKey = trendItem.dataset.trend;
+                const data = offlineData.trendAnalysis[selectedTrendKey];
+                showModal(data.title, data.content);
+            });
+
+            // --- ONLINE (API) FEATURE HANDLERS ---
+
+            async function callInitiativeAnalysisNetwork(prompt, title) {
+                modalTitle.textContent = title;
+                modalContent.classList.add('hidden');
+                modalLoader.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContainer.classList.remove('scale-95');
+                }, 10);
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        modalContent.innerHTML = text.replace(/-\s\*\*(.*?)\*\*/g, '<h6 class="font-bold mt-4 mb-1">$1</h6>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                    } else {
+                        modalContent.textContent = 'پاسخی از شبکه تحلیل ابتکار دریافت نشد. لطفاً دوباره تلاش کنید.';
+                    }
+                } catch (error) {
+                    console.error("Error calling API:", error);
+                    modalContent.textContent = 'خطا در برقراری ارتباط با شبکه تحلیل ابتکار. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.';
+                } finally {
+                    modalLoader.classList.add('hidden');
+                    modalContent.classList.remove('hidden');
+                }
+            }
+
+            // Scenario Generator (Online)
+            document.getElementById('generate-scenario-btn').addEventListener('click', () => {
+                const userInput = document.getElementById('scenario-input').value.trim();
+                if (!userInput) return;
+                const prompt = `As a military defense analyst, generate a brief, plausible threat scenario for an Iranian C-UAS system based on the following description. The scenario should be in Persian.
+                Description: "${userInput}"
+                
+                Structure your response with these headings in Persian:
+                - **شرح کلی سناریو:**
+                - **مسیر پروازی محتمل:**
+                - **اهداف بالقوه:**
+                - **تاکتیک‌های پیشنهادی برای مقابله اولیه:**`;
+                
+                callInitiativeAnalysisNetwork(prompt, 'تحلیل سناریوی تهدید');
+            });
+
+            // SWOT Analysis (Online)
+            document.getElementById('swot-analysis-btn').addEventListener('click', () => {
+                const prompt = `Based on the context of a national C-UAS (Counter-Unmanned Aircraft System) initiative in Iran that focuses on domestic innovation, layered defense, and solving cost asymmetry, perform a detailed SWOT analysis. The response must be in Persian.
+
+                Structure the response with four main headings:
+                - **نقاط قوت (Strengths):** (e.g., Fostering domestic industry, strategic autonomy)
+                - **نقاط ضعف (Weaknesses):** (e.g., Potential technology gaps, integration challenges)
+                - **فرصت‌ها (Opportunities):** (e.g., Becoming a regional tech leader, export potential)
+                - **تهدیدها (Threats):** (e.g., Rapid evolution of drone technology, economic sanctions impacting R&D)`;
+                
+                callInitiativeAnalysisNetwork(prompt, 'تحلیل راهبردی SWOT');
+            });
+
+            // Technical Deep Dive (Online)
+            document.getElementById('deep-dive-btn').addEventListener('click', () => {
+                const userInput = document.getElementById('deep-dive-input').value.trim();
+                if (!userInput) return;
+                const prompt = `As a technical expert, explain the following C-UAS concept in simple but accurate Persian.
+                Concept: "${userInput}"
+
+                Structure the response with these headings:
+                - **تعریف ساده:**
+                - **اهمیت آن در سامانه C-UAS:**
+                - **یک مثال کاربردی:**`;
+
+                callInitiativeAnalysisNetwork(prompt, 'کاوش عمیق فنی');
+            });
+        });
+    </script>
+</body>
+</html>
